@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FINT — İnteraktif Mobil Prototip</title>
+<style>
+  :root {
+    --pink: #DE6FA1;
+    --pink-dk: #B23E6A;
+    --pink-lt: #FBE3EC;
+    --pink-pale: #FFF4F8;
+    --yellow: #F5C518;
+    --yellow-lt: #FFEFB3;
+    --yellow-pale: #FFFAEC;
+    --ink: #1A1A1A;
+    --muted: #7A4A60;
+    --muted-lt: #B89AA5;
+    --border: #F0D5E0;
+    --white: #FFFFFF;
+    --good: #1F8F47;
+    --warn: #E07020;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    background: linear-gradient(135deg, #f4d8e4 0%, #ffeec8 100%);
+    color: var(--ink);
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 12px;
+    gap: 16px;
+    min-height: 100%;
+  }
+  .header-note {
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+    max-width: 360px;
+  }
+  .header-note b { color: var(--pink-dk); }
+
+  /* Phone frame */
+  .phone {
+    width: 375px;
+    height: 760px;
+    background: #111;
+    border-radius: 42px;
+    padding: 12px;
+    box-shadow: 0 30px 60px rgba(178, 62, 106, 0.35), 0 6px 18px rgba(0,0,0,0.18);
+    position: relative;
+  }
+  .phone::before {
+    content: "";
+    position: absolute;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 110px;
+    height: 26px;
+    background: #111;
+    border-radius: 16px;
+    z-index: 10;
+  }
+  .screen {
+    background: var(--white);
+    border-radius: 32px;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .status-bar {
+    height: 38px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding: 0 28px 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .status-bar .right { display: flex; gap: 4px; }
+  .content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 18px 16px;
+  }
+  .content::-webkit-scrollbar { width: 0; }
+  /* Tabbar */
+  .tabbar {
+    flex-shrink: 0;
+    height: 64px;
+    border-top: 1px solid var(--border);
+    background: var(--white);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 6px 8px 10px;
+  }
+  .tabbar button {
+    border: 0;
+    background: transparent;
+    color: var(--muted-lt);
+    font-size: 10px;
+    font-weight: 600;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    flex: 1;
+    padding: 4px 0;
+    transition: color 0.18s;
+  }
+  .tabbar button .icon {
+    font-size: 22px;
+    line-height: 1;
+  }
+  .tabbar button.active { color: var(--pink-dk); }
+  .tabbar button.active .icon { transform: scale(1.1); }
+
+  /* Generic */
+  .h1 { font-size: 24px; font-weight: 800; margin-bottom: 2px; }
+  .h2 { font-size: 17px; font-weight: 700; }
+  .small { font-size: 12px; color: var(--muted); }
+  .label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+  .row { display: flex; align-items: center; }
+  .between { justify-content: space-between; }
+  .spread { gap: 12px; }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--pink-lt);
+    color: var(--pink-dk);
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .pill.yellow { background: var(--yellow-lt); color: #8B6900; }
+
+  /* Cards */
+  .card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .card.pink { background: var(--pink); color: var(--white); border-color: var(--pink); }
+  .card.pink .small, .card.pink .label { color: rgba(255,255,255,0.85); }
+  .card.yellow { background: var(--yellow); border-color: var(--yellow); color: var(--ink); }
+  .card.pale { background: var(--pink-pale); border-color: var(--border); }
+
+  /* Hero budget */
+  .hero {
+    background: linear-gradient(135deg, var(--pink) 0%, var(--pink-dk) 100%);
+    border-radius: 20px;
+    padding: 18px;
+    color: var(--white);
+    margin-bottom: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::after {
+    content: "";
+    position: absolute;
+    right: -40px;
+    top: -40px;
+    width: 140px;
+    height: 140px;
+    background: var(--yellow);
+    opacity: 0.18;
+    border-radius: 50%;
+  }
+  .hero .label { color: rgba(255,255,255,0.85); }
+  .hero .big {
+    font-size: 38px;
+    font-weight: 800;
+    margin: 6px 0 4px;
+    letter-spacing: -1px;
+  }
+  .hero .currency { font-size: 20px; font-weight: 600; opacity: 0.85; margin-left: 4px; }
+  .progress-track {
+    height: 8px;
+    background: rgba(255,255,255,0.25);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-top: 10px;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--yellow);
+    border-radius: 6px;
+    transition: width 0.5s ease;
+  }
+  .hero .meta {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 11px;
+    opacity: 0.9;
+  }
+
+  /* Quick actions row */
+  .quick-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .quick {
+    background: var(--pink-pale);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px 4px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+    transition: transform 0.15s, background 0.15s;
+  }
+  .quick:active { transform: scale(0.94); }
+  .quick:hover { background: var(--pink-lt); }
+  .quick .ic {
+    width: 30px; height: 30px;
+    background: var(--pink);
+    color: var(--white);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+  }
+  .quick.alt .ic { background: var(--yellow); color: var(--ink); }
+
+  /* Transaction list */
+  .tx {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px dashed var(--border);
+  }
+  .tx:last-child { border-bottom: 0; }
+  .tx .cat-ic {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--pink-lt);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .tx .grow { flex: 1; }
+  .tx .name { font-size: 13px; font-weight: 600; }
+  .tx .meta { font-size: 11px; color: var(--muted); }
+  .tx .amt { font-weight: 700; font-size: 14px; }
+  .tx .amt.minus { color: var(--pink-dk); }
+  .tx .amt.plus { color: var(--good); }
+
+  /* Section header */
+  .sec-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 10px 4px 8px;
+  }
+  .sec-head h3 { font-size: 14px; font-weight: 700; }
+  .sec-head a { font-size: 11px; color: var(--pink-dk); font-weight: 600; }
+
+  /* Category bars */
+  .catlist .item { padding: 8px 0; }
+  .catlist .top { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; }
+  .catlist .top .nm { font-weight: 600; }
+  .catlist .top .pct { color: var(--muted); }
+  .catbar { height: 6px; background: var(--pink-pale); border-radius: 4px; overflow: hidden; }
+  .catbar > div { height: 100%; background: var(--pink); border-radius: 4px; transition: width 0.4s; }
+  .catbar > div.warn { background: var(--pink-dk); }
+  .catbar > div.amber { background: var(--yellow); }
+
+  /* Tasks */
+  .task {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 8px;
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  .task .check {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--pink);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: var(--white);
+    cursor: pointer;
+    flex-shrink: 0;
+    background: var(--white);
+    transition: background 0.2s;
+  }
+  .task.done { background: var(--pink-pale); opacity: 0.75; }
+  .task.done .check { background: var(--pink); }
+  .task .body { flex: 1; }
+  .task .body h4 { font-size: 13px; font-weight: 700; }
+  .task .body p { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .task.done .body h4 { text-decoration: line-through; color: var(--muted); }
+  .task .reward {
+    background: var(--yellow);
+    color: var(--ink);
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 999px;
+  }
+
+  /* Suggestion cards */
+  .sug {
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, var(--yellow-pale), var(--white));
+    border: 1px solid var(--yellow-lt);
+  }
+  .sug.pink {
+    background: linear-gradient(135deg, var(--pink-pale), var(--white));
+    border-color: var(--pink-lt);
+  }
+  .sug .cap {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    color: var(--pink-dk);
+    margin-bottom: 4px;
+  }
+  .sug.pink .cap { color: var(--pink-dk); }
+  .sug h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .sug p { font-size: 12px; color: var(--muted); line-height: 1.45; }
+  .sug .actions { margin-top: 10px; display: flex; gap: 8px; }
+
+  /* Buttons */
+  .btn {
+    border: 0;
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.12s, opacity 0.12s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn.primary { background: var(--pink); color: var(--white); }
+  .btn.yellow { background: var(--yellow); color: var(--ink); }
+  .btn.ghost { background: transparent; color: var(--pink-dk); border: 1px solid var(--pink-lt); }
+
+  /* Profile */
+  .level-card {
+    background: linear-gradient(135deg, var(--pink), var(--pink-dk));
+    color: var(--white);
+    padding: 16px;
+    border-radius: 18px;
+    margin-bottom: 14px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .level-card .ring {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    border: 4px solid var(--yellow);
+    margin: 0 auto 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    font-weight: 800;
+    background: rgba(255,255,255,0.1);
+  }
+  .badges {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+  .badge {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 4px;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted);
+    transition: transform 0.2s;
+  }
+  .badge.earned {
+    background: var(--yellow-pale);
+    border-color: var(--yellow);
+    color: var(--ink);
+  }
+  .badge.earned:hover { transform: translateY(-2px); }
+  .badge .em { font-size: 22px; display: block; margin-bottom: 2px; filter: grayscale(1); opacity: 0.4; }
+  .badge.earned .em { filter: none; opacity: 1; }
+
+  /* Modal */
+  .modal-back {
+    position: absolute;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    border-radius: 32px;
+    display: none;
+    align-items: flex-end;
+    z-index: 50;
+  }
+  .modal-back.show { display: flex; }
+  .modal {
+    background: var(--white);
+    width: 100%;
+    border-top-left-radius: 24px;
+    border-top-right-radius: 24px;
+    padding: 18px 18px 22px;
+    max-height: 80%;
+    overflow-y: auto;
+  }
+  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 12px; }
+  .modal label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 4px; margin-top: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .modal input, .modal select {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--ink);
+    background: var(--pink-pale);
+  }
+  .modal input:focus, .modal select:focus { outline: 2px solid var(--pink); border-color: var(--pink); }
+  .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 6px; }
+  .cat-btn {
+    border: 1px solid var(--border);
+    background: var(--pink-pale);
+    border-radius: 12px;
+    padding: 10px 4px;
+    font-size: 10px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+  }
+  .cat-btn.sel { background: var(--pink); color: var(--white); border-color: var(--pink); }
+  .cat-btn .em { font-size: 18px; display: block; }
+  .modal .actions { display: flex; gap: 8px; margin-top: 14px; }
+  .modal .actions .btn { flex: 1; padding: 12px; font-size: 13px; }
+
+  /* Toast */
+  .toast {
+    position: absolute;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--ink);
+    color: var(--white);
+    padding: 10px 16px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    opacity: 0;
+    transition: opacity 0.3s, transform 0.3s;
+    z-index: 100;
+    pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Onboarding */
+  .ob {
+    height: 100%;
+    background: linear-gradient(135deg, var(--pink), var(--pink-dk));
+    color: var(--white);
+    display: flex;
+    flex-direction: column;
+    padding: 30px 26px;
+    border-radius: 32px;
+  }
+  .ob h1 { font-size: 32px; font-weight: 900; letter-spacing: -1px; line-height: 1.05; }
+  .ob h1 .accent { color: var(--yellow); }
+  .ob .sub { font-size: 14px; opacity: 0.92; margin-top: 8px; line-height: 1.5; }
+  .ob .features { margin-top: 24px; display: flex; flex-direction: column; gap: 14px; }
+  .ob .ft {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: rgba(255,255,255,0.12);
+    padding: 12px;
+    border-radius: 14px;
+    backdrop-filter: blur(4px);
+  }
+  .ob .ft .nm { font-size: 22px; }
+  .ob .ft h4 { font-size: 13px; font-weight: 700; }
+  .ob .ft p { font-size: 11px; opacity: 0.88; margin-top: 2px; line-height: 1.4; }
+  .ob .cta {
+    margin-top: auto;
+    background: var(--yellow);
+    color: var(--ink);
+    border: 0;
+    border-radius: 14px;
+    padding: 14px;
+    font-size: 14px;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.18);
+  }
+  .ob .skip { background: transparent; color: rgba(255,255,255,0.85); margin-top: 8px; border: 0; font-size: 12px; cursor: pointer; }
+
+  /* Mini chart */
+  .spark { display: flex; align-items: flex-end; gap: 4px; height: 60px; padding-top: 6px; }
+  .spark .bar { flex: 1; background: var(--pink-lt); border-radius: 3px 3px 0 0; min-height: 4px; transition: height 0.5s; position: relative; }
+  .spark .bar.today { background: var(--pink); }
+  .spark .bar.over { background: var(--pink-dk); }
+  .spark-labels { display: flex; gap: 4px; margin-top: 4px; }
+  .spark-labels span { flex: 1; text-align: center; font-size: 9px; color: var(--muted); }
+
+  /* Lesson */
+  .lesson {
+    background: linear-gradient(135deg, var(--yellow), #FFB800);
+    color: var(--ink);
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .lesson:active { transform: scale(0.98); }
+  .lesson h4 { font-size: 14px; font-weight: 800; }
+  .lesson p { font-size: 11px; margin-top: 4px; opacity: 0.9; }
+
+  @keyframes pop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.18); }
+    100% { transform: scale(1); }
+  }
+  .pop { animation: pop 0.4s ease; }
+</style>
+</head>
+<body>
+
+<div class="header-note">
+  <b>FINT</b> — interaktif mobil prototip. Sekmelere dokun, harcama ekle, görev tamamla, seviye kazan.
+</div>
+
+<div class="phone">
+  <div class="screen" id="screen">
+    <!-- Status bar -->
+    <div class="status-bar" id="statusbar">
+      <span>9:41</span>
+      <span class="right">📶 📡 🔋</span>
+    </div>
+
+    <!-- Content -->
+    <div class="content" id="content"></div>
+
+    <!-- Tab bar -->
+    <div class="tabbar" id="tabbar">
+      <button data-tab="home" class="active"><span class="icon">🏠</span><span>Ana Sayfa</span></button>
+      <button data-tab="analysis"><span class="icon">📊</span><span>Analiz</span></button>
+      <button data-tab="tasks"><span class="icon">✅</span><span>Görevler</span></button>
+      <button data-tab="suggest"><span class="icon">💡</span><span>Öneri</span></button>
+      <button data-tab="profile"><span class="icon">👤</span><span>Profil</span></button>
+    </div>
+
+    <!-- Modals & toast -->
+    <div class="modal-back" id="modalBack"></div>
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<div class="header-note">
+  Veriler tarayıcıda kalır (localStorage). Sıfırlamak için <a href="javascript:FINT.reset()" style="color:var(--pink-dk);font-weight:700">tıkla</a>.
+</div>
+
+<script>
+"use strict";
+
+// ============ STATE ============
+const STORAGE_KEY = "fint_app_v1";
+const CATEGORIES = [
+  { id: "yemek", name: "Yemek", em: "🍔", color: "#DE6FA1" },
+  { id: "ulasim", name: "Ulaşım", em: "🚌", color: "#F5C518" },
+  { id: "egitim", name: "Eğitim", em: "📚", color: "#B23E6A" },
+  { id: "eglence", name: "Eğlence", em: "🎉", color: "#E8843A" },
+  { id: "alisveris", name: "Alışveriş", em: "🛍️", color: "#A24BAB" },
+  { id: "saglik", name: "Sağlık", em: "💊", color: "#1F8F47" },
+  { id: "fatura", name: "Fatura", em: "🧾", color: "#5A6FB6" },
+  { id: "diger", name: "Diğer", em: "✨", color: "#7A4A60" },
+];
+const BADGES = [
+  { id: "first_tx", em: "🎯", name: "İlk Adım", desc: "İlk harcamanı kaydet" },
+  { id: "task_3", em: "🔥", name: "Üçleme", desc: "3 görev tamamla" },
+  { id: "save_50", em: "💰", name: "Tasarrufçu", desc: "Bütçenin %20'sini koru" },
+  { id: "streak_3", em: "📅", name: "Düzenli", desc: "3 gün üst üste takip et" },
+  { id: "lesson_1", em: "🧠", name: "Öğrenci", desc: "İlk dersini bitir" },
+  { id: "level_up", em: "⭐", name: "Seviye Atla", desc: "Seviye 2'ye ulaş" },
+  { id: "cat_master", em: "📊", name: "Analist", desc: "5 farklı kategori kullan" },
+  { id: "weekly", em: "🏆", name: "Haftalık Şampiyon", desc: "Haftalık hedefe ulaş" },
+];
+
+const LESSONS = [
+  { id: "l1", em: "💡", title: "50/30/20 Kuralı", desc: "Geliri ihtiyaç, istek ve tasarruf olarak böl. 1 dakika." },
+  { id: "l2", em: "🪙", title: "Acil Durum Fonu", desc: "Neden 3 aylık gider kadar yedek? Hızlı özet." },
+  { id: "l3", em: "📈", title: "Bileşik Faiz", desc: "Tasarrufun zaman içinde nasıl büyür?" },
+];
+
+const DEFAULT_TASKS = [
+  { id: "t_track3", title: "Bugün 3 harcama kaydet", desc: "Takip alışkanlığı kuruyoruz", reward: 30, type: "track", target: 3 },
+  { id: "t_under_budget", title: "Günlük bütçeyi aşma", desc: "Bugün harcama < günlük limit", reward: 40, type: "under_budget" },
+  { id: "t_save_today", title: "Bugün hiç eğlence harcaması yapma", desc: "Eğlence kategorisini boş bırak", reward: 25, type: "no_category", category: "eglence" },
+  { id: "t_lesson", title: "1 finans dersi tamamla", desc: "Bilgi kalıcı olur", reward: 20, type: "lesson" },
+  { id: "t_5cat", title: "5 farklı kategori kullan", desc: "Harcama deseni netleşsin", reward: 35, type: "categories", target: 5 },
+];
+
+const DEFAULT_STATE = {
+  onboarded: false,
+  monthlyBudget: 3000,
+  startedAt: Date.now(),
+  expenses: [], // {id, amount, category, note, ts}
+  tasksDone: [], // task ids
+  badges: [], // earned badge ids
+  lessonsDone: [],
+  xp: 0,
+  level: 1,
+  tab: "home",
+};
+
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return structuredClone(DEFAULT_STATE);
+    const s = JSON.parse(raw);
+    return Object.assign(structuredClone(DEFAULT_STATE), s);
+  } catch (e) {
+    return structuredClone(DEFAULT_STATE);
+  }
+}
+function saveState() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+
+// ============ UTILS ============
+function tl(n) { return Math.round(n).toLocaleString("tr-TR") + " ₺"; }
+function pct(a, b) { if (!b) return 0; return Math.min(100, (a/b)*100); }
+function todayKey() { const d = new Date(); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; }
+function dayOf(ts) { const d = new Date(ts); return `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`; }
+function monthOf(ts) { const d = new Date(ts); return `${d.getFullYear()}-${d.getMonth()+1}`; }
+function thisMonthExp() { const m = monthOf(Date.now()); return state.expenses.filter(e => monthOf(e.ts) === m); }
+function todayExp() { const k = todayKey(); return state.expenses.filter(e => dayOf(e.ts) === k); }
+function dailyBudget() {
+  const d = new Date();
+  const daysIn = new Date(d.getFullYear(), d.getMonth()+1, 0).getDate();
+  return state.monthlyBudget / daysIn;
+}
+function spent(list) { return list.reduce((s, e) => s + e.amount, 0); }
+function categoriesUsed() { return new Set(state.expenses.map(e => e.category)).size; }
+function streakDays() {
+  // count consecutive days backwards with at least one expense
+  let count = 0;
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+    if (state.expenses.some(e => dayOf(e.ts) === key)) count++;
+    else if (i === 0) {} else break;
+  }
+  return count;
+}
+
+// ============ XP / LEVEL ============
+function xpForLevel(L) { return L * 100; }
+function levelProgress() {
+  const need = xpForLevel(state.level);
+  return { have: state.xp % need || (state.xp && state.xp % need === 0 ? need : 0), need };
+}
+function addXp(n) {
+  state.xp += n;
+  while (state.xp >= xpForLevel(state.level)) {
+    state.xp -= xpForLevel(state.level);
+    state.level++;
+    earnBadge("level_up");
+    toast(`🎉 Seviye atladın! Seviye ${state.level}`);
+  }
+  saveState();
+}
+function earnBadge(id) {
+  if (state.badges.includes(id)) return false;
+  state.badges.push(id);
+  saveState();
+  const b = BADGES.find(x => x.id === id);
+  if (b) toast(`🏅 Yeni rozet: ${b.name}`);
+  return true;
+}
+
+// ============ TASK CHECKING ============
+function isTaskComplete(t) {
+  if (state.tasksDone.includes(t.id)) return true;
+  const todays = todayExp();
+  switch (t.type) {
+    case "track": return todays.length >= (t.target || 1);
+    case "under_budget": return todays.length > 0 && spent(todays) <= dailyBudget();
+    case "no_category": return todays.length >= 2 && !todays.some(e => e.category === t.category);
+    case "lesson": return state.lessonsDone.length >= 1;
+    case "categories": return categoriesUsed() >= (t.target || 3);
+    default: return false;
+  }
+}
+function checkBadgeProgress() {
+  if (state.expenses.length >= 1) earnBadge("first_tx");
+  if (state.tasksDone.length >= 3) earnBadge("task_3");
+  if (categoriesUsed() >= 5) earnBadge("cat_master");
+  if (state.lessonsDone.length >= 1) earnBadge("lesson_1");
+  if (streakDays() >= 3) earnBadge("streak_3");
+  // save_50: if remaining budget > 20% of monthly and we're past mid-month
+  const m = thisMonthExp();
+  const today = new Date().getDate();
+  if (today >= 15 && (state.monthlyBudget - spent(m)) > state.monthlyBudget * 0.2) earnBadge("save_50");
+}
+
+// ============ TOAST ============
+let toastTimer = null;
+function toast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+// ============ RENDER ============
+function render() {
+  const c = document.getElementById("content");
+  if (!state.onboarded) { c.innerHTML = ""; document.getElementById("tabbar").style.display = "none"; document.getElementById("statusbar").style.display = "none"; renderOnboarding(); return; }
+  document.getElementById("tabbar").style.display = "flex";
+  document.getElementById("statusbar").style.display = "flex";
+  document.querySelectorAll(".tabbar button").forEach(b => {
+    b.classList.toggle("active", b.dataset.tab === state.tab);
+  });
+  if (state.tab === "home") renderHome(c);
+  else if (state.tab === "analysis") renderAnalysis(c);
+  else if (state.tab === "tasks") renderTasks(c);
+  else if (state.tab === "suggest") renderSuggest(c);
+  else if (state.tab === "profile") renderProfile(c);
+  c.scrollTop = 0;
+  checkBadgeProgress();
+}
+
+// ---- ONBOARDING ----
+function renderOnboarding() {
+  const screen = document.getElementById("screen");
+  let ob = screen.querySelector(".ob");
+  if (ob) ob.remove();
+  ob = document.createElement("div");
+  ob.className = "ob";
+  ob.innerHTML = `
+    <h1>FINT'e<br><span class="accent">hoş geldin.</span></h1>
+    <p class="sub">Harcamayı değil, finansal alışkanlığı yönet. Öğrenciler için tasarlanmış bütçe & finans okuryazarlığı.</p>
+    <div class="features">
+      <div class="ft"><div class="nm">💼</div><div><h4>Bütçe Takibi</h4><p>Gelir ve harcamalarını kategorilere göre takip et.</p></div></div>
+      <div class="ft"><div class="nm">💡</div><div><h4>Akıllı Öneriler</h4><p>Davranışına göre uyarı ve içgörüler.</p></div></div>
+      <div class="ft"><div class="nm">🏆</div><div><h4>Oyunlaştırılmış Eğitim</h4><p>Görevler, rozetler ve mini derslerle alışkanlık kazan.</p></div></div>
+    </div>
+    <button class="cta" id="obStart">Aylık bütçe belirle →</button>
+    <button class="skip" id="obSkip">Şimdilik atla</button>
+  `;
+  screen.appendChild(ob);
+  ob.querySelector("#obStart").onclick = () => {
+    ob.remove();
+    showBudgetModal(true);
+  };
+  ob.querySelector("#obSkip").onclick = () => {
+    state.onboarded = true; saveState(); render();
+  };
+}
+
+// ---- HOME ----
+function renderHome(c) {
+  const monthExp = thisMonthExp();
+  const monthSpent = spent(monthExp);
+  const remaining = Math.max(0, state.monthlyBudget - monthSpent);
+  const todays = todayExp();
+  const todaysSpent = spent(todays);
+  const dailyLim = dailyBudget();
+  const overDaily = todaysSpent > dailyLim;
+  c.innerHTML = `
+    <div class="row between" style="margin: 4px 0 14px;">
+      <div>
+        <div class="small">Merhaba 👋</div>
+        <div class="h2">Aylin</div>
+      </div>
+      <div class="pill yellow">⭐ Sv ${state.level} · ${state.xp} XP</div>
+    </div>
+
+    <div class="hero">
+      <div class="label">Bu ay kalan bütçe</div>
+      <div class="big">${tl(remaining)}</div>
+      <div class="progress-track"><div class="progress-fill" style="width: ${pct(monthSpent, state.monthlyBudget)}%"></div></div>
+      <div class="meta">
+        <span>${tl(monthSpent)} harcandı</span>
+        <span>Hedef: ${tl(state.monthlyBudget)}</span>
+      </div>
+    </div>
+
+    <div class="quick-row">
+      <div class="quick" id="qAdd"><div class="ic">＋</div>Harcama</div>
+      <div class="quick alt" id="qBudget"><div class="ic">🎯</div>Bütçe</div>
+      <div class="quick" id="qTask"><div class="ic">✅</div>Görev</div>
+      <div class="quick alt" id="qLesson"><div class="ic">🧠</div>Ders</div>
+    </div>
+
+    <div class="card ${overDaily ? "" : "pale"}">
+      <div class="row between" style="margin-bottom:6px;">
+        <div class="label">Bugün</div>
+        <span class="pill ${overDaily ? "" : "yellow"}">${overDaily ? "Limit aşıldı" : "Limit içinde"}</span>
+      </div>
+      <div class="row between">
+        <div>
+          <div class="h2">${tl(todaysSpent)}</div>
+          <div class="small">Günlük limit: ${tl(dailyLim)}</div>
+        </div>
+        <div style="width: 90px; height: 60px;">${renderSpark()}</div>
+      </div>
+    </div>
+
+    <div class="sec-head"><h3>Son Hareketler</h3><a href="#" id="seeAll">Tümü →</a></div>
+    ${state.expenses.length === 0 ? `
+      <div class="card pale" style="text-align:center; padding: 22px 14px;">
+        <div style="font-size: 32px;">🪙</div>
+        <div class="h2" style="margin-top:6px;">İlk harcamanı ekle</div>
+        <div class="small" style="margin: 4px 0 12px;">Takibe başlamak için + Harcama'ya dokun.</div>
+        <button class="btn primary" id="emptyAdd">İlk harcamayı ekle</button>
+      </div>
+    ` : state.expenses.slice(-5).reverse().map(renderTx).join("")}
+  `;
+
+  document.getElementById("qAdd").onclick = showAddExpense;
+  document.getElementById("qBudget").onclick = () => showBudgetModal(false);
+  document.getElementById("qTask").onclick = () => switchTab("tasks");
+  document.getElementById("qLesson").onclick = () => switchTab("suggest");
+  document.getElementById("seeAll").onclick = (e) => { e.preventDefault(); switchTab("analysis"); };
+  const ea = document.getElementById("emptyAdd"); if (ea) ea.onclick = showAddExpense;
+}
+
+function renderTx(e) {
+  const cat = CATEGORIES.find(c => c.id === e.category) || CATEGORIES[CATEGORIES.length - 1];
+  const d = new Date(e.ts);
+  const ts = `${d.getDate()}.${d.getMonth()+1} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;
+  return `
+    <div class="tx">
+      <div class="cat-ic" style="background: ${cat.color}22; color: ${cat.color};">${cat.em}</div>
+      <div class="grow">
+        <div class="name">${e.note || cat.name}</div>
+        <div class="meta">${cat.name} · ${ts}</div>
+      </div>
+      <div class="amt minus">-${tl(e.amount)}</div>
+    </div>
+  `;
+}
+
+function renderSpark() {
+  const days = 7;
+  const dailyLim = dailyBudget();
+  const arr = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+    const v = state.expenses.filter(e => dayOf(e.ts) === key).reduce((s,e) => s+e.amount, 0);
+    arr.push(v);
+  }
+  const max = Math.max(dailyLim, ...arr, 1);
+  let bars = '<div class="spark">';
+  arr.forEach((v, i) => {
+    const cls = v > dailyLim ? "over" : (i === arr.length - 1 ? "today" : "");
+    bars += `<div class="bar ${cls}" style="height: ${Math.max(8, (v/max)*100)}%"></div>`;
+  });
+  bars += "</div>";
+  return bars;
+}
+
+// ---- ANALYSIS ----
+function renderAnalysis(c) {
+  const monthExp = thisMonthExp();
+  const total = spent(monthExp);
+  const byCat = {};
+  monthExp.forEach(e => byCat[e.category] = (byCat[e.category] || 0) + e.amount);
+  const sorted = Object.entries(byCat).sort((a,b) => b[1] - a[1]);
+
+  const dailyLim = dailyBudget();
+  // 7-day chart
+  const days = 7;
+  const arr = [];
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(); d.setDate(d.getDate() - i);
+    const key = `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+    const v = state.expenses.filter(e => dayOf(e.ts) === key).reduce((s,e) => s+e.amount, 0);
+    arr.push({ key, v, label: ["Pa","Pt","Sa","Ça","Pe","Cu","Ct"][d.getDay()] });
+  }
+  const maxBar = Math.max(dailyLim * 1.5, ...arr.map(x => x.v), 1);
+
+  c.innerHTML = `
+    <div class="h1" style="margin-top:6px;">Analiz</div>
+    <div class="small" style="margin-bottom:14px;">Bu ayki harcaman: <b>${tl(total)}</b></div>
+
+    <div class="card">
+      <div class="row between" style="margin-bottom:8px;"><div class="label">Son 7 Gün</div><span class="pill">Günlük limit ${tl(dailyLim)}</span></div>
+      <div class="spark" style="height: 90px;">
+        ${arr.map(x => {
+          const cls = x.v > dailyLim ? "over" : "";
+          return `<div class="bar ${cls}" style="height: ${Math.max(6, (x.v/maxBar)*100)}%" title="${tl(x.v)}"></div>`;
+        }).join("")}
+      </div>
+      <div class="spark-labels">${arr.map(x => `<span>${x.label}</span>`).join("")}</div>
+    </div>
+
+    <div class="card">
+      <div class="label" style="margin-bottom:10px;">Kategori Dağılımı</div>
+      ${sorted.length === 0 ? `<div class="small" style="text-align:center; padding: 20px 0;">Henüz harcama yok. Ana sayfadan ekle.</div>` :
+        `<div class="catlist">${sorted.map(([cid, v]) => {
+          const cat = CATEGORIES.find(x => x.id === cid);
+          const p = (v/total)*100;
+          const cls = p > 35 ? "warn" : (cid === "eglence" ? "amber" : "");
+          return `<div class="item">
+            <div class="top"><div class="nm">${cat.em} ${cat.name}</div><div class="pct">${tl(v)} · ${p.toFixed(0)}%</div></div>
+            <div class="catbar"><div class="${cls}" style="width:${p}%; background:${cat.color}"></div></div>
+          </div>`;
+        }).join("")}</div>`
+      }
+    </div>
+
+    ${total > 0 ? renderInsightCard(byCat, total, dailyLim) : ""}
+
+    <div class="sec-head"><h3>Tüm Hareketler</h3><span class="small">${state.expenses.length} kayıt</span></div>
+    <div class="card pale" style="padding: 6px 14px;">
+      ${state.expenses.length === 0 ? `<div class="small" style="text-align:center; padding: 20px 0;">Boş.</div>` : state.expenses.slice().reverse().map(renderTx).join("")}
+    </div>
+  `;
+}
+
+function renderInsightCard(byCat, total, dailyLim) {
+  // detect biggest category
+  const sorted = Object.entries(byCat).sort((a,b) => b[1] - a[1]);
+  const top = sorted[0];
+  const cat = CATEGORIES.find(x => x.id === top[0]);
+  const pctTop = (top[1]/total)*100;
+  let msg = `En çok ${cat.name.toLowerCase()} kategorisinde harcadın (%${pctTop.toFixed(0)}).`;
+  if (pctTop > 40) msg += " Bu oran yüksek — bir sonraki hafta %10 düşürmeyi denemek ister misin?";
+  return `
+    <div class="card yellow">
+      <div class="label" style="color:#7A6500;">FINT İçgörüsü</div>
+      <div style="margin-top:6px; font-size: 13px; font-weight: 600;">${msg}</div>
+    </div>
+  `;
+}
+
+// ---- TASKS ----
+function renderTasks(c) {
+  const todays = todayExp();
+  c.innerHTML = `
+    <div class="h1" style="margin-top:6px;">Görevler</div>
+    <div class="small" style="margin-bottom:12px;">Tamamla, XP kazan, rozet aç.</div>
+
+    <div class="card pink" style="margin-bottom: 14px;">
+      <div class="label">Bugün</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+        <div>
+          <div class="h2" style="color:white;">${state.tasksDone.length} / ${DEFAULT_TASKS.length}</div>
+          <div class="small">tamamlandı</div>
+        </div>
+        <div style="font-size:36px;">${state.tasksDone.length === DEFAULT_TASKS.length ? "🏆" : "🔥"}</div>
+      </div>
+    </div>
+
+    ${DEFAULT_TASKS.map(t => {
+      const done = isTaskComplete(t);
+      const auto = done && !state.tasksDone.includes(t.id);
+      if (auto) { state.tasksDone.push(t.id); addXp(t.reward); saveState(); }
+      return `
+        <div class="task ${done ? "done" : ""}" data-task="${t.id}">
+          <div class="check">${done ? "✓" : ""}</div>
+          <div class="body">
+            <h4>${t.title}</h4>
+            <p>${t.desc}</p>
+          </div>
+          <div class="reward">+${t.reward} XP</div>
+        </div>
+      `;
+    }).join("")}
+
+    <div class="sec-head"><h3>Mini Dersler</h3><span class="small">+20 XP / ders</span></div>
+    ${LESSONS.map(L => {
+      const done = state.lessonsDone.includes(L.id);
+      return `
+        <div class="lesson" data-lesson="${L.id}" style="${done ? 'opacity:0.55; background: #FFF8DC; color: #7A6500;' : ''}">
+          <div class="row between">
+            <div style="display:flex;align-items:center;gap:10px;">
+              <div style="font-size:22px;">${L.em}</div>
+              <div>
+                <h4>${L.title}</h4>
+                <p>${L.desc}</p>
+              </div>
+            </div>
+            <div style="font-weight:800; font-size: 18px;">${done ? "✓" : "→"}</div>
+          </div>
+        </div>
+      `;
+    }).join("")}
+  `;
+
+  c.querySelectorAll(".task").forEach(el => {
+    el.onclick = () => {
+      const id = el.dataset.task;
+      if (state.tasksDone.includes(id)) return;
+      const t = DEFAULT_TASKS.find(x => x.id === id);
+      if (isTaskComplete(t)) {
+        state.tasksDone.push(id); addXp(t.reward); saveState(); render();
+      } else {
+        toast("Bu görev henüz tamamlanmadı 💪");
+      }
+    };
+  });
+  c.querySelectorAll(".lesson").forEach(el => {
+    el.onclick = () => {
+      const id = el.dataset.lesson;
+      if (state.lessonsDone.includes(id)) return;
+      const L = LESSONS.find(x => x.id === id);
+      showLessonModal(L);
+    };
+  });
+}
+
+// ---- SUGGEST ----
+function renderSuggest(c) {
+  const monthExp = thisMonthExp();
+  const total = spent(monthExp);
+  const byCat = {};
+  monthExp.forEach(e => byCat[e.category] = (byCat[e.category] || 0) + e.amount);
+  const dailyLim = dailyBudget();
+  const today = todayExp();
+  const todaySp = spent(today);
+  const remaining = state.monthlyBudget - total;
+
+  const suggestions = [];
+
+  if (state.expenses.length === 0) {
+    suggestions.push({ pink: false, cap: "Başlangıç", h: "İlk harcamanı ekle", p: "Önerilerin akıllı olması için 5–10 harcamaya ihtiyacımız var. Ana sayfadaki + Harcama düğmesinden başla." });
+  }
+
+  if (todaySp > dailyLim) {
+    suggestions.push({ pink: true, cap: "Uyarı", h: "Günlük limiti aştın", p: `Bugün ${tl(todaySp)} harcadın — günlük hedefin ${tl(dailyLim)}. Yarın için bilinçli ol.` });
+  } else if (today.length > 0) {
+    suggestions.push({ pink: false, cap: "İyi gidiyorsun", h: "Limit içindesin 👏", p: `Bugün ${tl(todaySp)} ile günlük hedefinin altındasın.` });
+  }
+
+  // top category insight
+  const sorted = Object.entries(byCat).sort((a,b) => b[1] - a[1]);
+  if (sorted.length > 0) {
+    const [cid, v] = sorted[0];
+    const cat = CATEGORIES.find(x => x.id === cid);
+    const p = (v/total)*100;
+    if (p > 35) {
+      suggestions.push({ pink: true, cap: "Davranış", h: `${cat.em} ${cat.name} harcaman yüksek`, p: `Aylık harcamanın %${p.toFixed(0)}'i bu kategoride. %10 azaltırsan ${tl(v*0.1)} kalır.` });
+    } else if (p > 0) {
+      suggestions.push({ pink: false, cap: "Davranış", h: `${cat.em} ${cat.name} öne çıkıyor`, p: `Aylık harcamanın %${p.toFixed(0)}'i burada — dengeli bir oran.` });
+    }
+  }
+
+  // streak
+  const sd = streakDays();
+  if (sd >= 2) suggestions.push({ pink: false, cap: "Alışkanlık", h: `${sd} gün üst üste takipte`, p: "Düzen biriktiren tek şey — devam et!" });
+
+  // savings projection
+  const today_d = new Date().getDate();
+  const daysIn = new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).getDate();
+  const projected = (total / Math.max(today_d, 1)) * daysIn;
+  if (today_d >= 5) {
+    if (projected < state.monthlyBudget) {
+      suggestions.push({ pink: false, cap: "Tahmin", h: `Ay sonunda ${tl(state.monthlyBudget - projected)} tasarruf!`, p: `Mevcut hızda toplam ${tl(projected)} harcayacaksın.` });
+    } else {
+      suggestions.push({ pink: true, cap: "Tahmin", h: `Ay sonunda ${tl(projected - state.monthlyBudget)} aşım var`, p: `Mevcut hızda bütçen yetmeyecek. Günlük ${tl((projected - state.monthlyBudget) / Math.max(daysIn - today_d, 1))} az harca.` });
+    }
+  }
+
+  // educational lesson recommendation
+  const undoneLesson = LESSONS.find(L => !state.lessonsDone.includes(L.id));
+  if (undoneLesson) {
+    suggestions.push({ pink: false, yellow: true, cap: "Mini ders", h: `${undoneLesson.em} ${undoneLesson.title}`, p: undoneLesson.desc, lessonId: undoneLesson.id });
+  }
+
+  c.innerHTML = `
+    <div class="h1" style="margin-top:6px;">Akıllı Öneriler</div>
+    <div class="small" style="margin-bottom:14px;">Davranışına göre kişiselleştirilmiş içgörüler.</div>
+    ${suggestions.length === 0 ? `<div class="card pale" style="text-align:center; padding: 30px 14px;"><div style="font-size:32px;">🌱</div><div class="h2" style="margin-top:8px;">Daha fazla veri lazım</div><div class="small" style="margin-top:4px;">Birkaç harcama ekleyince öneriler burada görünecek.</div></div>` :
+      suggestions.map((s, i) => `
+        <div class="sug ${s.pink ? 'pink' : ''}" ${s.lessonId ? `data-lesson="${s.lessonId}"` : ''} style="${s.lessonId ? 'cursor:pointer' : ''}">
+          <div class="cap">${s.cap}</div>
+          <h4>${s.h}</h4>
+          <p>${s.p}</p>
+          ${s.lessonId ? `<div class="actions"><button class="btn yellow">Dersi başlat</button></div>` : ''}
+        </div>
+      `).join("")
+    }
+  `;
+  c.querySelectorAll('.sug[data-lesson]').forEach(el => {
+    el.onclick = () => {
+      const L = LESSONS.find(x => x.id === el.dataset.lesson);
+      showLessonModal(L);
+    };
+  });
+}
+
+// ---- PROFILE ----
+function renderProfile(c) {
+  const lp = levelProgress();
+  const monthExp = thisMonthExp();
+  const monthSpent = spent(monthExp);
+  const saved = Math.max(0, state.monthlyBudget - monthSpent);
+  c.innerHTML = `
+    <div class="h1" style="margin-top:6px;">Profil</div>
+
+    <div class="level-card">
+      <div class="ring">${state.level}</div>
+      <div style="font-size:14px; font-weight:700; letter-spacing:1px;">SEVİYE ${state.level}</div>
+      <div class="progress-track" style="background: rgba(255,255,255,0.25); margin-top:10px;">
+        <div class="progress-fill" style="width: ${(state.xp/lp.need)*100}%;"></div>
+      </div>
+      <div style="font-size:11px; opacity:0.9; margin-top:6px;">${state.xp} / ${lp.need} XP — sonraki seviyeye ${lp.need - state.xp} XP</div>
+    </div>
+
+    <div style="display:grid; grid-template-columns: repeat(3,1fr); gap:8px; margin-bottom:14px;">
+      <div class="card pale" style="text-align:center; padding: 12px 6px; margin:0;">
+        <div class="label">Toplam Görev</div>
+        <div class="h2" style="margin-top:4px;">${state.tasksDone.length}</div>
+      </div>
+      <div class="card pale" style="text-align:center; padding: 12px 6px; margin:0;">
+        <div class="label">Streak</div>
+        <div class="h2" style="margin-top:4px;">${streakDays()} gün</div>
+      </div>
+      <div class="card pale" style="text-align:center; padding: 12px 6px; margin:0;">
+        <div class="label">Bu ay tasarruf</div>
+        <div class="h2" style="margin-top:4px;">${tl(saved)}</div>
+      </div>
+    </div>
+
+    <div class="sec-head"><h3>Rozetler</h3><span class="small">${state.badges.length} / ${BADGES.length}</span></div>
+    <div class="badges">
+      ${BADGES.map(b => {
+        const e = state.badges.includes(b.id);
+        return `<div class="badge ${e ? 'earned' : ''}" title="${b.desc}">
+          <span class="em">${b.em}</span>
+          ${b.name}
+        </div>`;
+      }).join("")}
+    </div>
+
+    <div class="sec-head"><h3>Ayarlar</h3></div>
+    <div class="card pale" style="padding: 4px 0;">
+      <button class="task" id="setBudget" style="width:100%; cursor:pointer; background:transparent; border:0; padding: 12px;">
+        <div class="check" style="border-color: var(--yellow); background: var(--yellow); color: var(--ink);">🎯</div>
+        <div class="body" style="text-align:left;"><h4>Aylık bütçe</h4><p>${tl(state.monthlyBudget)}</p></div>
+        <div style="color:var(--muted);">›</div>
+      </button>
+      <button class="task" id="resetAll" style="width:100%; cursor:pointer; background:transparent; border:0; padding: 12px;">
+        <div class="check" style="border-color: var(--pink-dk); background: var(--pink-dk); color: var(--white);">↺</div>
+        <div class="body" style="text-align:left;"><h4>Verileri sıfırla</h4><p>Yeniden başla</p></div>
+        <div style="color:var(--muted);">›</div>
+      </button>
+    </div>
+
+    <div style="text-align:center; margin: 18px 0 6px;" class="small">FINT — test edilmeye hazır prototip 💖💛</div>
+  `;
+  document.getElementById("setBudget").onclick = () => showBudgetModal(false);
+  document.getElementById("resetAll").onclick = () => {
+    if (confirm("Tüm veriler silinecek. Emin misin?")) FINT.reset();
+  };
+}
+
+// ---- MODALS ----
+function showAddExpense() {
+  let amount = "", category = null, note = "";
+  const back = document.getElementById("modalBack");
+  back.innerHTML = `
+    <div class="modal" id="modalBox">
+      <h3>＋ Harcama Ekle</h3>
+      <label>Tutar (₺)</label>
+      <input type="number" inputmode="numeric" id="amt" placeholder="örn. 45" autofocus />
+      <label>Kategori</label>
+      <div class="cat-grid" id="catGrid">
+        ${CATEGORIES.map(c => `
+          <button type="button" class="cat-btn" data-cat="${c.id}">
+            <span class="em">${c.em}</span>${c.name}
+          </button>
+        `).join("")}
+      </div>
+      <label>Not (opsiyonel)</label>
+      <input type="text" id="note" placeholder="örn. öğle yemeği" />
+      <div class="actions">
+        <button class="btn ghost" id="cancel">İptal</button>
+        <button class="btn primary" id="save">Ekle</button>
+      </div>
+    </div>
+  `;
+  back.classList.add("show");
+  back.querySelectorAll("[data-cat]").forEach(b => {
+    b.onclick = () => {
+      back.querySelectorAll("[data-cat]").forEach(x => x.classList.remove("sel"));
+      b.classList.add("sel");
+      category = b.dataset.cat;
+    };
+  });
+  // default first
+  const first = back.querySelector("[data-cat]"); first.classList.add("sel"); category = first.dataset.cat;
+  back.querySelector("#cancel").onclick = closeModal;
+  back.querySelector("#save").onclick = () => {
+    const a = parseFloat(back.querySelector("#amt").value);
+    if (!a || a <= 0) { toast("Geçerli tutar gir."); return; }
+    const n = back.querySelector("#note").value.trim();
+    state.expenses.push({ id: Date.now(), amount: a, category, note: n, ts: Date.now() });
+    addXp(5);
+    saveState();
+    closeModal();
+    toast(`${tl(a)} eklendi · +5 XP`);
+    render();
+  };
+  back.onclick = (e) => { if (e.target === back) closeModal(); };
+}
+
+function showBudgetModal(initial) {
+  const back = document.getElementById("modalBack");
+  back.innerHTML = `
+    <div class="modal">
+      <h3>${initial ? "Aylık bütçe belirle" : "Aylık bütçeyi güncelle"}</h3>
+      <p class="small" style="margin-bottom: 8px;">Öğrenci olarak ay sonuna kadar harcayabileceğin toplam tutarı yaz.</p>
+      <label>Aylık bütçe (₺)</label>
+      <input type="number" inputmode="numeric" id="bud" value="${state.monthlyBudget}" autofocus />
+      <div class="cat-grid" style="grid-template-columns: repeat(4, 1fr); margin-top:10px;">
+        ${[1500, 2500, 3500, 5000].map(v => `<button type="button" class="cat-btn" data-v="${v}">${tl(v)}</button>`).join("")}
+      </div>
+      <div class="actions">
+        ${!initial ? `<button class="btn ghost" id="cancel">İptal</button>` : ""}
+        <button class="btn primary" id="save">${initial ? "Devam et" : "Kaydet"}</button>
+      </div>
+    </div>
+  `;
+  back.classList.add("show");
+  back.querySelectorAll("[data-v]").forEach(b => {
+    b.onclick = () => back.querySelector("#bud").value = b.dataset.v;
+  });
+  const cb = back.querySelector("#cancel"); if (cb) cb.onclick = closeModal;
+  back.querySelector("#save").onclick = () => {
+    const v = parseFloat(back.querySelector("#bud").value);
+    if (!v || v <= 0) { toast("Geçerli tutar gir."); return; }
+    state.monthlyBudget = v;
+    if (!state.onboarded) state.onboarded = true;
+    saveState();
+    closeModal();
+    toast(`Bütçen: ${tl(v)}`);
+    render();
+  };
+}
+
+function showLessonModal(L) {
+  const back = document.getElementById("modalBack");
+  let body = "";
+  if (L.id === "l1") body = `
+    <p class="small">Geliri 3 parçaya ayır:</p>
+    <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; margin: 10px 0;">
+      <div class="card pale" style="text-align:center; margin:0; padding: 14px 6px;"><div style="font-size:24px; font-weight:800; color: var(--pink-dk);">%50</div><div class="small">İhtiyaç</div></div>
+      <div class="card pale" style="text-align:center; margin:0; padding: 14px 6px;"><div style="font-size:24px; font-weight:800; color: var(--pink);">%30</div><div class="small">İstek</div></div>
+      <div class="card yellow" style="text-align:center; margin:0; padding: 14px 6px;"><div style="font-size:24px; font-weight:800;">%20</div><div class="small">Tasarruf</div></div>
+    </div>
+    <p class="small">Öğrenciler için: harçlığın %20'si tasarrufa, %30'u keyif harcamalara, %50'si zorunlu ihtiyaçlara.</p>
+  `;
+  else if (L.id === "l2") body = `
+    <p class="small">Acil durum fonu, beklenmedik durumlar için ayırdığın yedek paradır:</p>
+    <ul style="margin: 10px 0 10px 18px; font-size: 12px; color: var(--muted); line-height: 1.7;">
+      <li>Hedef: 3 aylık zorunlu giderin kadar yedek</li>
+      <li>Ayrı bir hesapta tut, harcamak için zorlaşsın</li>
+      <li>Önce küçük başla — 500 ₺ bile yardım eder</li>
+    </ul>
+  `;
+  else body = `
+    <p class="small">Bileşik faiz: kazandığın faiz tekrar yatırılır ve yeni faiz üretir.</p>
+    <div class="card yellow" style="margin-top: 10px;">
+      <div class="label" style="color:#7A6500;">Mini örnek</div>
+      <div style="font-size:13px; margin-top:6px;">Aylık <b>100 ₺</b>, yıllık %20 faizle 5 yıl sonra ≈ <b>${tl(100*12*5*1.55)}</b> olur.</div>
+    </div>
+  `;
+  back.innerHTML = `
+    <div class="modal">
+      <h3>${L.em} ${L.title}</h3>
+      ${body}
+      <div class="actions">
+        <button class="btn ghost" id="cancel">Kapat</button>
+        <button class="btn primary" id="done">Bitirdim · +20 XP</button>
+      </div>
+    </div>
+  `;
+  back.classList.add("show");
+  back.querySelector("#cancel").onclick = closeModal;
+  back.querySelector("#done").onclick = () => {
+    if (!state.lessonsDone.includes(L.id)) {
+      state.lessonsDone.push(L.id);
+      addXp(20);
+      saveState();
+      toast("Ders tamamlandı · +20 XP");
+    }
+    closeModal();
+    render();
+  };
+  back.onclick = (e) => { if (e.target === back) closeModal(); };
+}
+
+function closeModal() {
+  document.getElementById("modalBack").classList.remove("show");
+  setTimeout(() => document.getElementById("modalBack").innerHTML = "", 150);
+}
+
+// ============ TAB SWITCHING ============
+function switchTab(t) { state.tab = t; saveState(); render(); }
+document.querySelectorAll(".tabbar button").forEach(b => {
+  b.onclick = () => switchTab(b.dataset.tab);
+});
+
+// ============ PUBLIC API ============
+window.FINT = {
+  reset() {
+    localStorage.removeItem(STORAGE_KEY);
+    state = structuredClone(DEFAULT_STATE);
+    render();
+    toast("Sıfırlandı.");
+  },
+  state: () => state,
+  // demo seed (call from console: FINT.seed())
+  seed() {
+    state.onboarded = true;
+    state.monthlyBudget = 3000;
+    const now = Date.now();
+    const day = 24 * 3600 * 1000;
+    state.expenses = [
+      { id: 1, amount: 45, category: "yemek", note: "Yurt yemeği", ts: now - 6*day },
+      { id: 2, amount: 25, category: "ulasim", note: "Otobüs", ts: now - 6*day + 3600000 },
+      { id: 3, amount: 120, category: "egitim", note: "Defter+kalem", ts: now - 5*day },
+      { id: 4, amount: 80, category: "eglence", note: "Sinema", ts: now - 4*day },
+      { id: 5, amount: 35, category: "yemek", note: "Kafe", ts: now - 3*day },
+      { id: 6, amount: 60, category: "alisveris", note: "Tişört", ts: now - 2*day },
+      { id: 7, amount: 28, category: "ulasim", note: "Metro", ts: now - 1*day },
+      { id: 8, amount: 50, category: "yemek", note: "Öğle", ts: now - 3600000 },
+    ];
+    saveState();
+    render();
+    toast("Demo veriler yüklendi.");
+  },
+};
+
+// ============ INIT ============
+render();
+
+</script>
+</body>
+</html>
