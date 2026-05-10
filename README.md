@@ -1,1 +1,1 @@
-# FINT-app
+# FINTY-app
