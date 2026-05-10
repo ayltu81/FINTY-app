@@ -1350,7 +1350,7 @@ document.querySelectorAll(".tabbar button").forEach(b => {
 });
 
 // ============ PUBLIC API ============
-window.FINT = {
+window.FINTY = {
   reset() {
     localStorage.removeItem(STORAGE_KEY);
     state = structuredClone(DEFAULT_STATE);
@@ -1358,7 +1358,7 @@ window.FINT = {
     toast("Sıfırlandı.");
   },
   state: () => state,
-  // demo seed (call from console: FINT.seed())
+  // demo seed (call from console: FINTY.seed())
   seed() {
     state.onboarded = true;
     state.monthlyBudget = 3000;
