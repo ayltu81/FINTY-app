@@ -441,6 +441,27 @@
     padding: 14px;
     margin-bottom: 12px;
   }
+  /* Üyelik / Paketler */
+  .plan-toggle { display: flex; background: var(--pink-pale); border: 1px solid var(--border); border-radius: 12px; padding: 4px; margin-bottom: 12px; }
+  .plan-toggle button { flex: 1; border: 0; background: transparent; border-radius: 9px; padding: 9px 4px; font-size: 12px; font-weight: 700; color: var(--muted); cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .plan-toggle button.on { background: var(--pink); color: #fff; }
+  .plan-toggle .disc { font-size: 9px; background: var(--yellow); color: var(--ink); border-radius: 999px; padding: 1px 6px; font-weight: 800; }
+  .plan-toggle button.on .disc { background: #fff; color: var(--pink-dk); }
+  .plan-card { background: var(--white); border: 1px solid var(--border); border-radius: 16px; padding: 14px; margin-bottom: 10px; position: relative; }
+  .plan-card.featured { border-color: var(--pink); box-shadow: 0 0 0 2px var(--pink-lt); }
+  .plan-card.current { background: var(--pink-pale); }
+  .plan-head { margin-bottom: 10px; }
+  .plan-name { font-size: 16px; font-weight: 800; display: flex; align-items: center; gap: 8px; }
+  .plan-tag { font-size: 9px; font-weight: 800; background: var(--pink); color: #fff; border-radius: 999px; padding: 2px 8px; }
+  .plan-price { font-size: 26px; font-weight: 800; margin-top: 4px; }
+  .plan-price span { font-size: 13px; font-weight: 600; color: var(--muted); }
+  .plan-save { font-size: 10px; color: var(--good); font-weight: 700; margin-top: 2px; }
+  .plan-feats { display: flex; flex-direction: column; gap: 6px; margin-bottom: 4px; }
+  .pf { font-size: 12px; display: flex; gap: 8px; align-items: flex-start; line-height: 1.35; }
+  .pf .ok { color: var(--good); font-weight: 800; flex-shrink: 0; }
+  .pf.off { color: var(--muted-lt); }
+  .pf.off .no { color: var(--muted-lt); font-weight: 800; flex-shrink: 0; }
+  .plan-badge { display: inline-block; background: var(--yellow); color: var(--ink); font-size: 10px; font-weight: 800; border-radius: 999px; padding: 3px 10px; margin-top: 8px; }
   /* Finance video cards */
   .vidcard {
     display: flex;
@@ -726,6 +747,18 @@ const TASK_POOL = [
   { id: "w_close",   title: "Ayı kapatıp kumbaraya birikim ekle", desc: "Ana sayfadan ayı kapat", reward: 65, type: "closemonth" },
   { id: "w_nofun",   title: "Bu hafta eğlenceye az harca", desc: "Eğlence < 100 ₺", reward: 55, type: "cat_under", category: "eglence", limit: 100 },
 ];
+// === YENİ: Üyelik paketleri (Ücretsiz / Plus / Premium) ===
+const PLANS = [
+  { id: "free", name: "Ücretsiz", monthly: 0, yearly: 0, tag: "",
+    feats: [ "Temel bütçe & harcama takibi", "Son 7 gün analizi", "Haftalık 4 görev", "1 karakter (Tomi)", "2 giriş finans videosu", "Temel kumbara" ],
+    miss: [ "Reklamsız deneyim", "Tüm karakterler & videolar", "AI finans koçu" ] },
+  { id: "plus", name: "Plus", monthly: 49, yearly: 490, tag: "En popüler",
+    feats: [ "Ücretsiz'deki her şey", "Sınırsız & gelişmiş analiz + ay sonu tahmini", "Tüm haftalık görevler · %50 bonus XP", "Tüm karakterleri açma hakkı", "Tüm finans videoları", "Reklamsız deneyim", "Tam akıllı öneriler" ],
+    miss: [ "AI finans koçu", "Veli / aile paneli" ] },
+  { id: "premium", name: "Premium", monthly: 99, yearly: 990, tag: "Tam paket",
+    feats: [ "Plus'taki her şey", "🤖 AI finans koçu (kişisel tavsiye)", "👨‍👩‍👧 Veli / aile paneli", "🎯 Hedefli kumbara & otomatik tasarruf", "🦄 Özel & efsane karakterler / temalar", "📤 Detaylı rapor & dışa aktarma", "⚡ Öncelikli destek" ],
+    miss: [] },
+];
 const DEFAULT_STATE = {
   onboarded: false,
   monthlyBudget: 3000,
@@ -747,6 +780,8 @@ const DEFAULT_STATE = {
   weekStart: 0,               // haftalık görev başlangıcı
   weekTasks: [],              // bu haftanın görevleri
   videoWatch: [],             // {id, ts}
+  plan: "free",               // free | plus | premium
+  billing: "monthly",         // monthly | yearly
 };
 let state = loadState();
 function loadState() {
@@ -823,6 +858,18 @@ function selectChar(id) {
   state.activeChar = id;
   saveState();
   toast(`${ch.em} ${ch.name} artık profilinde!`);
+  render();
+}
+// ============ ÜYELİK / PAKETLER ============
+function planById(id) { return PLANS.find(p => p.id === id) || PLANS[0]; }
+function setBilling(b) { state.billing = b; saveState(); render(); }
+function selectPlan(id) {
+  const p = planById(id);
+  if (state.plan === id) { toast("Zaten bu paktesin 👍"); return; }
+  // Not: bu bir prototip — gerçek ödeme alınmaz, sadece demo seçim yapılır.
+  state.plan = id;
+  saveState();
+  toast(id === "free" ? "Ücretsiz pakete geçtin." : `🎉 ${p.name} paketine geçtin! (demo)`);
   render();
 }
 // ============ KUMBARA (otomatik: bütçe - harcama) ============
@@ -1327,6 +1374,7 @@ function renderProfile(c) {
       <div class="ring">${ch.em}</div>
       <div style="font-size:14px; font-weight:700; letter-spacing:1px;">${ch.name.toUpperCase()} · SEVİYE ${state.level}</div>
       <div style="font-size:11px; opacity:0.9;">${ch.role}</div>
+      <div class="plan-badge">${planById(state.plan).name === "Ücretsiz" ? "Ücretsiz üyelik" : planById(state.plan).name + " üye 💎"}</div>
       <div class="progress-track" style="background: rgba(255,255,255,0.25); margin-top:10px;">
         <div class="progress-fill" style="width: ${(state.xp/lp.need)*100}%;"></div>
       </div>
@@ -1346,6 +1394,34 @@ function renderProfile(c) {
         <div class="h2" style="margin-top:4px;">${tl(saved)}</div>
       </div>
     </div>
+    <div class="sec-head"><h3>💎 Üyelik & Paketler</h3><span class="small">Mevcut: ${planById(state.plan).name}</span></div>
+    <div class="plan-toggle">
+      <button data-bill="monthly" class="${state.billing === 'monthly' ? 'on' : ''}">Aylık</button>
+      <button data-bill="yearly" class="${state.billing === 'yearly' ? 'on' : ''}">Yıllık <span class="disc">2 ay bedava</span></button>
+    </div>
+    ${PLANS.map(p => {
+      const isCurrent = state.plan === p.id;
+      const price = p.monthly === 0 ? "₺0" : (state.billing === "yearly" ? "₺" + p.yearly : "₺" + p.monthly);
+      const period = p.monthly === 0 ? "" : (state.billing === "yearly" ? " /yıl" : " /ay");
+      const saveLine = (state.billing === "yearly" && p.monthly > 0)
+        ? `<div class="plan-save">2 ay bedava · ₺${p.monthly}/ay yerine ₺${Math.round(p.yearly/12)}/ay</div>` : "";
+      return `
+        <div class="plan-card ${isCurrent ? 'current' : ''} ${p.tag === 'En popüler' ? 'featured' : ''}">
+          <div class="plan-head">
+            <div class="plan-name">${p.name}${p.tag ? `<span class="plan-tag">${p.tag}</span>` : ""}</div>
+            <div class="plan-price">${price}<span>${period}</span></div>
+            ${saveLine}
+          </div>
+          <div class="plan-feats">
+            ${p.feats.map(f => `<div class="pf"><span class="ok">✓</span><span>${f}</span></div>`).join("")}
+            ${p.miss.map(f => `<div class="pf off"><span class="no">✕</span><span>${f}</span></div>`).join("")}
+          </div>
+          <button class="btn ${isCurrent ? 'ghost' : 'primary'}" data-plan="${p.id}" style="width:100%; margin-top:10px; padding:11px;">
+            ${isCurrent ? "✓ Mevcut planın" : (p.id === "free" ? "Ücretsize dön" : "Yükselt → " + p.name)}
+          </button>
+        </div>`;
+    }).join("")}
+    <div class="small" style="text-align:center; margin: 2px 4px 14px; color: var(--muted-lt);">Bu bir prototiptir — gerçek ödeme alınmaz, seçim demo amaçlıdır.</div>
     <div class="sec-head"><h3>🎭 Karakterler</h3><span class="small">${unlockedCharCount()} / ${CHARACTERS.length} açık</span></div>
     <div class="small" style="margin: 0 4px 8px;">${nextChar ? `Sonraki kilit: ${nextChar.em} ${nextChar.name} — Seviye ${nextChar.level}` : "Tüm karakterlerin kilidi açıldı! 🏆"}</div>
     <div class="badges">
@@ -1388,6 +1464,12 @@ function renderProfile(c) {
   `;
   c.querySelectorAll('.char[data-char]').forEach(el => {
     el.onclick = () => selectChar(el.dataset.char);
+  });
+  c.querySelectorAll('[data-bill]').forEach(el => {
+    el.onclick = () => setBilling(el.dataset.bill);
+  });
+  c.querySelectorAll('[data-plan]').forEach(el => {
+    el.onclick = () => selectPlan(el.dataset.plan);
   });
   document.getElementById("setBudget").onclick = () => showBudgetModal(false);
   document.getElementById("resetAll").onclick = () => {
