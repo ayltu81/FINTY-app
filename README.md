@@ -1,1 +1,1 @@
-# FINTY-app
+# EDUFINTY-app
