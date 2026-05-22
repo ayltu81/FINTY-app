@@ -673,12 +673,12 @@
   </div>
 </div>
 <div class="header-note">
-  Veriler tarayıcıda kalır (localStorage). Sıfırlamak için <a href="javascript:FINTY.reset()" style="color:var(--pink-dk);font-weight:700">tıkla</a>.
+  Veriler tarayıcıda kalır (localStorage). Sıfırlamak için <a href="javascript:EDUFINTY.reset()" style="color:var(--pink-dk);font-weight:700">tıkla</a>.
 </div>
 <script>
 "use strict";
 // ============ STATE ============
-const STORAGE_KEY = "fint_app_v2";
+const STORAGE_KEY = "EDUFINTY_app_v2";
 const WEEK_MS = 7 * 24 * 3600 * 1000;
 const MONTHS_TR = ["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
 const CATEGORIES = [
@@ -974,7 +974,7 @@ function renderOnboarding() {
   ob = document.createElement("div");
   ob.className = "ob";
   ob.innerHTML = `
-    <h1>FINTY'e<br><span class="accent">hoş geldin.</span></h1>
+    <h1>EDUFINTY'e<br><span class="accent">hoş geldin.</span></h1>
     <p class="sub">Harcamayı değil, finansal alışkanlığı yönet. Öğrenciler için tasarlanmış bütçe & finans okuryazarlığı.</p>
     <div class="features">
       <div class="ft"><div class="nm">🐷</div><div><h4>Kumbara & Bütçe</h4><p>Ay sonunda harcamadığın para otomatik kumbarana gider.</p></div></div>
@@ -1660,7 +1660,7 @@ document.querySelectorAll(".tabbar button").forEach(b => {
   b.onclick = () => switchTab(b.dataset.tab);
 });
 // ============ PUBLIC API ============
-window.FINTY = {
+window.EDUFINTY = {
   reset() {
     localStorage.removeItem(STORAGE_KEY);
     state = structuredClone(DEFAULT_STATE);
